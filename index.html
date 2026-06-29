@@ -90,6 +90,10 @@ canvas#cv{display:block;width:100%!important;height:100%!important}
 .ji-name{font-size:10.5px;color:var(--ink2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;cursor:default;font-family:var(--mono)}
 .ji-type{font-size:8.5px;color:var(--ink3);padding:1px 5px;border:1px solid var(--line-soft);border-radius:2px;flex-shrink:0;font-family:var(--mono);text-transform:uppercase}
 .ji-val{font-size:11px;color:var(--acc);font-weight:600;min-width:46px;text-align:right;flex-shrink:0;font-family:var(--mono)}
+.ji-nudge-grp{display:flex;align-items:center;gap:3px;flex-shrink:0}
+.ji-nudge{width:18px;height:18px;line-height:1;padding:0;display:flex;align-items:center;justify-content:center;background:var(--panel2);border:1px solid var(--line-soft);border-radius:2px;color:var(--ink2);font-size:13px;cursor:pointer;font-family:var(--mono);user-select:none}
+.ji-nudge:hover{border-color:var(--acc);color:var(--acc)}
+.ji-nudge:active{background:var(--acc-soft)}
 input[type=range]{width:100%;height:2px;-webkit-appearance:none;appearance:none;background:var(--line);outline:none;cursor:pointer}
 input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:12px;height:12px;background:var(--panel2);border:2px solid var(--ink);border-radius:50%;transition:border-color .1s}
 input[type=range]:hover::-webkit-slider-thumb,input[type=range]:focus::-webkit-slider-thumb{border-color:var(--acc)}
@@ -665,13 +669,23 @@ function buildSliders(joints){
     const mn=isP?'0':j.limit.lower.toFixed(4);
     const mx=isP?'180':j.limit.upper.toFixed(4);
     const st=isP?'1':'0.001';
-    html+=`<div class="ji" id="ji_${sid(j.name)}" data-joint="${j.name}"><div class="ji-head"><span class="ji-name" title="${j.name}">${j.name}</span><span class="ji-type">${j.type}</span><span class="ji-val" id="v_${sid(j.name)}">0.0°</span></div><input type="range" class="jslider" data-joint="${j.name}" min="${mn}" max="${mx}" step="${st}" value="0" id="s_${sid(j.name)}"></div>`;
+    html+=`<div class="ji" id="ji_${sid(j.name)}" data-joint="${j.name}"><div class="ji-head"><span class="ji-name" title="${j.name}">${j.name}</span><div class="ji-nudge-grp"><button class="ji-nudge" data-joint="${j.name}" data-dir="-1">−</button><span class="ji-val" id="v_${sid(j.name)}">0.0°</span><button class="ji-nudge" data-joint="${j.name}" data-dir="1">+</button></div></div><input type="range" class="jslider" data-joint="${j.name}" min="${mn}" max="${mx}" step="${st}" value="0" id="s_${sid(j.name)}"></div>`;
   }
   html+='</div>';
   el.innerHTML=html;
   el.querySelectorAll('.jslider').forEach(sl=>{
     const jname=sl.dataset.joint;sliderEls[jname]=sl;valEls[jname]=document.getElementById('v_'+sid(jname));
     sl.addEventListener('input',()=>{const v=parseFloat(sl.value);setJointValue(jname,v);valEls[jname].textContent=fmtVal(jname,v);liveSendTick();});
+  });
+  // ★ −/+ 미세조정 버튼: 클릭 1회 + 길게 누르면 연속
+  el.querySelectorAll('.ji-nudge').forEach(btn=>{
+    const jn=btn.dataset.joint, dir=parseInt(btn.dataset.dir);
+    let iv=null,to=null;
+    const start=e=>{e.preventDefault();nudge(jn,dir);to=setTimeout(()=>{iv=setInterval(()=>nudge(jn,dir),60);},350);};
+    const stop=()=>{clearTimeout(to);clearInterval(iv);iv=null;to=null;};
+    btn.addEventListener('mousedown',start);
+    btn.addEventListener('mouseup',stop);btn.addEventListener('mouseleave',stop);
+    btn.addEventListener('touchstart',start,{passive:false});btn.addEventListener('touchend',stop);
   });
 }
 
@@ -700,6 +714,20 @@ function setJointValue(jname,v){
   }
 }
 const setAngle=setJointValue;
+
+// ★ 미세조정: revolute=0.1°, prismatic=1
+const NUDGE_DEG=0.1;
+function nudge(jname,dir){
+  const sl=sliderEls[jname]; if(!sl)return;
+  const jd=jointDefs[jname];
+  const step=(jd&&jd.type==='prismatic')?1:NUDGE_DEG*Math.PI/180;
+  let v=parseFloat(sl.value)+dir*step;
+  const mn=parseFloat(sl.min),mx=parseFloat(sl.max);
+  v=Math.max(mn,Math.min(mx,v));
+  sl.value=v;setJointValue(jname,v);
+  if(valEls[jname])valEls[jname].textContent=fmtVal(jname,v);
+  liveSendTick();
+}
 
 // TIMELINE CORE
 function getCurrentPose(){
