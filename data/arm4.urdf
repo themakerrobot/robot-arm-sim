@@ -107,10 +107,10 @@
     <limit lower="-2.0944" upper="2.0944" effort="2" velocity="2"/>
   </joint>
 
-  <!-- 그리퍼 마운트 (L2=133mm, 축3→그리퍼 TCP, 고정) -->
+  <!-- 그리퍼 마운트 (link2 길이 100mm 끝에 부착, 고정). 그리퍼가 33mm 더 뻗어 TCP=133mm -->
   <joint name="joint4_mount" type="fixed">
     <parent link="link2"/><child link="gripper_base"/>
-    <origin xyz="0 0 0.133"/>
+    <origin xyz="0 0 0.100"/>
   </joint>
 
   <!-- J4: 랙앤피니언 prismatic. 0도=45mm 개방, 180도=15mm (스트로크 30mm) -->
