@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>URDF Web Simulator</title>
+<title>Robot Arm Simulator</title>
 <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <style>
@@ -33,10 +33,6 @@ header h1{font-size:13px;color:var(--ink);font-weight:700;letter-spacing:.14em;t
 .left{width:218px;background:var(--panel);border-right:1px solid var(--line);display:flex;flex-direction:column;flex-shrink:0;overflow-y:auto}
 .sec{padding:12px;border-bottom:1px solid var(--line-soft)}
 .sec-title{font-size:9.5px;text-transform:uppercase;color:var(--ink3);letter-spacing:.16em;margin-bottom:9px;font-weight:600}
-.upload-zone{display:block;width:100%;padding:8px 10px;background:var(--panel2);border:1px dashed var(--line);border-radius:2px;color:var(--ink2);font-size:11px;cursor:pointer;text-align:center;margin-bottom:6px;transition:border-color .15s,color .15s;line-height:1.4}
-.upload-zone:hover{border-color:var(--acc);color:var(--acc)}
-.upload-zone.done{border-style:solid;border-color:var(--ok);color:var(--ok);background:#F0F7F2}
-input[type=file]{display:none}
 .btn-load{width:100%;padding:8px;background:var(--ink);color:#fff;border:none;border-radius:2px;font-size:11.5px;font-weight:600;letter-spacing:.08em;cursor:pointer;margin-top:2px;font-family:var(--sans)}
 .btn-load:hover{background:var(--acc)}
 .btn-load:disabled{background:var(--line-soft);color:var(--ink3);cursor:not-allowed}
@@ -49,6 +45,7 @@ input[type=file]{display:none}
 .pose-row{display:flex;gap:5px;margin-top:5px}
 .pose-btn{flex:1;padding:6px;background:var(--panel2);border:1px solid var(--line-soft);border-radius:2px;color:var(--ink2);font-size:10px;cursor:pointer;text-align:center;transition:all .12s}
 .pose-btn:hover{border-color:var(--acc);color:var(--acc)}
+input[type=file]{display:none}
 .serial-row{display:flex;gap:5px;margin-bottom:6px;align-items:center}
 .serial-sel{flex:1;background:var(--panel2);border:1px solid var(--line-soft);border-radius:2px;color:var(--ink);font-size:11px;padding:4px 6px;outline:none;cursor:pointer;font-family:var(--mono)}
 .serial-stat{font-size:10px;color:var(--ink3);font-family:var(--mono);margin:5px 0 2px;min-height:13px}
@@ -93,9 +90,6 @@ canvas#cv{display:block;width:100%!important;height:100%!important}
 .ji-name{font-size:10.5px;color:var(--ink2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;cursor:default;font-family:var(--mono)}
 .ji-type{font-size:8.5px;color:var(--ink3);padding:1px 5px;border:1px solid var(--line-soft);border-radius:2px;flex-shrink:0;font-family:var(--mono);text-transform:uppercase}
 .ji-val{font-size:11px;color:var(--acc);font-weight:600;min-width:46px;text-align:right;flex-shrink:0;font-family:var(--mono)}
-input.ji-val{width:56px;background:var(--panel2);border:1px solid var(--line-soft);border-radius:2px;padding:1px 4px;color:var(--acc);font-weight:600;font-size:11px;text-align:right;outline:none;font-family:var(--mono);flex-shrink:0}
-input.ji-val:focus{border-color:var(--acc)}
-input.ji-val::-webkit-inner-spin-button{opacity:.4}
 input[type=range]{width:100%;height:2px;-webkit-appearance:none;appearance:none;background:var(--line);outline:none;cursor:pointer}
 input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:12px;height:12px;background:var(--panel2);border:2px solid var(--ink);border-radius:50%;transition:border-color .1s}
 input[type=range]:hover::-webkit-slider-thumb,input[type=range]:focus::-webkit-slider-thumb{border-color:var(--acc)}
@@ -115,7 +109,6 @@ input[type=range]:hover::-webkit-slider-thumb,input[type=range]:focus::-webkit-s
 .tl-kf-count{font-size:10px;color:var(--ink3);margin-left:auto;white-space:nowrap;font-family:var(--mono)}
 .tl-time-display{font-size:11px;color:var(--ink);font-family:var(--mono);min-width:48px;text-align:center;font-weight:600}
 .tl-body{flex:1;display:flex;overflow:hidden}
-.tl-track-labels{width:0;flex-shrink:0;overflow:hidden}
 .tl-canvas-wrap{flex:1;position:relative;overflow:hidden}
 #tlCanvas{display:block;cursor:crosshair}
 ::-webkit-scrollbar{width:4px}
@@ -125,7 +118,7 @@ input[type=range]:hover::-webkit-slider-thumb,input[type=range]:focus::-webkit-s
 </head>
 <body>
 <header>
-  <h1>PIBO Sim</h1>
+  <h1>Robot Arm Sim</h1>
   <span class="badge" id="statusBadge">준비</span>
   <span class="badge" id="serialBadge">시리얼: 미연결</span>
 </header>
@@ -133,7 +126,7 @@ input[type=range]:hover::-webkit-slider-thumb,input[type=range]:focus::-webkit-s
 <div class="main">
   <div class="left">
 
-    <!-- ★ 실물 PIBO (Web Serial) -->
+    <!-- ★ 실물 로봇팔 (Web Serial) -->
     <div class="sec">
       <div class="sec-title">실물 연결 (Serial)</div>
       <div class="serial-row">
@@ -149,8 +142,12 @@ input[type=range]:hover::-webkit-slider-thumb,input[type=range]:focus::-webkit-s
       <div class="serial-stat" id="serialStat">포트 미선택</div>
       <button class="tb" id="liveBtn"><span class="ic">&#x1F4E1;</span>실시간 전송 (Live)</button>
       <button class="tb" id="sendOnceBtn"><span class="ic">&#x25B6;</span>현재 포즈 전송</button>
+      <div class="pose-row">
+        <button class="pose-btn" id="hwStopBtn">&#x25A0; 정지 (#stop)</button>
+        <button class="pose-btn" id="hwPosBtn">&#x21BA; 상태 (#pos)</button>
+      </div>
       <div class="serial-raw">
-        <input type="text" id="rawCmd" placeholder="직접 명령 (예: #pos!)">
+        <input type="text" id="rawCmd" placeholder="직접 명령 (예: #m1:30!)">
         <button id="rawSendBtn">전송</button>
       </div>
       <textarea class="serial-log" id="serialLog" readonly placeholder="시리얼 로그..."></textarea>
@@ -171,15 +168,6 @@ input[type=range]:hover::-webkit-slider-thumb,input[type=range]:focus::-webkit-s
         <button class="pose-btn" id="loadPoseBtn">&#x1F4C2; 불러오기</button>
       </div>
       <input type="file" id="poseFileIn" accept=".json">
-    </div>
-    <div class="sec">
-      <div class="sec-title">LCD</div>
-      <input type="text" id="lcdText" placeholder="Hi, pibo" style="width:100%;padding:6px 8px;background:var(--panel2);border:1px solid var(--line-soft);border-radius:2px;font-size:11px;color:var(--ink);outline:none;font-family:var(--mono);margin-bottom:5px">
-      <div style="display:flex;align-items:center;gap:6px;font-size:10px;color:var(--ink3)"><span>글씨색</span><input type="color" id="lcdColor" value="#ffffff" style="flex:1;height:26px;border:1px solid var(--line-soft);border-radius:2px;background:var(--panel2);cursor:pointer;padding:2px"></div>
-    </div>
-    <div class="sec">
-      <div class="sec-title">안경</div>
-      <input type="color" id="glassColor" value="#00e1ff" style="width:100%;height:30px;border:1px solid var(--line-soft);border-radius:2px;background:var(--panel2);cursor:pointer;padding:2px">
     </div>
     <div class="sec" id="infoSec" style="display:none">
       <div class="sec-title">정보</div>
@@ -253,52 +241,24 @@ input[type=range]:hover::-webkit-slider-thumb,input[type=range]:focus::-webkit-s
 
 <script>
 // ═══════════════════════════════════════════════════════════
-// PIBO 실물 모션 설정  ★★★ 여기만 보면 됨 ★★★
+// 설정  ★★★ 여기만 보면 됨 ★★★
 // ═══════════════════════════════════════════════════════════
-// 슬라이더 0 = 실물 모터 0 (= 앞으로 나란히). 어깨는 모델 0이 "팔 내림"이라
-// 슬라이더 0에서 -90° 오프셋을 줘서 "앞으로 나란히"가 0이 되게 함.
-const ZERO_OFFSET = {            // 라디안. 슬라이더 0일 때 추가 적용할 각도
-  shoulder_l_joint: -Math.PI/2,
-  shoulder_r_joint:  Math.PI/2,
-};
-// 뷰어에서만 회전방향 뒤집기(실물과 시각 일치). 저장값(모터)은 슬라이더 그대로.
-const VIEWER_SIGN = {};
-// 슬라이더에 표시할 실물 모터 이름
-const MOTOR_LABEL = {
-  ankle_r_joint:'M0 (Right Foot)', hip_r_joint:'M1 (Right Leg)',
-  shoulder_r_joint:'M2 (Right Arm)', elbow_r_joint:'M3 (Right Hand)',
-  head_pan_joint:'M4 (Head Pan)', head_tilt_joint:'M5 (Head Tilt)',
-  ankle_l_joint:'M6 (Left Foot)', hip_l_joint:'M7 (Left Leg)',
-  shoulder_l_joint:'M8 (Left Arm)', elbow_l_joint:'M9 (Left Hand)',
-};
-// M0..M9 → URDF joint + 부호. (저장 시 슬라이더값[deg] = 모터값)
-const PIBO_MAP = [
-  {j:'ankle_r_joint',    s: 1},  // M0 Right Foot ±25
-  {j:'hip_r_joint',      s: 1},  // M1 Right Leg  ±35
-  {j:'shoulder_r_joint', s: 1},  // M2 Right Arm  ±80
-  {j:'elbow_r_joint',    s: 1},  // M3 Right Hand ±30
-  {j:'head_pan_joint',   s: 1},  // M4 Head Pan   ±50
-  {j:'head_tilt_joint',  s: 1},  // M5 Head Tilt  ±25
-  {j:'ankle_l_joint',    s: 1},  // M6 Left Foot  ±25
-  {j:'hip_l_joint',      s: 1},  // M7 Left Leg   ±35
-  {j:'shoulder_l_joint', s: 1},  // M8 Left Arm   ±80
-  {j:'elbow_l_joint',    s: 1},  // M9 Left Hand  ±30
-];
-const PIBO_DEFAULT_INIT = [0,0,-70,-25,0,0,0,0,70,25]; // 저장 못 했을때 기본 init
-
-// ── 실물 시리얼 전송 설정 ──────────────────────────────────
-// ★ SEND_FORMAT: M0..M9 정수배열 → 실물 PIBO 펌웨어 명령 문자열.
-//   현재는 arm4 펌웨어와 동일한 #m: 형식을 기본값으로 둠.
-//   실제 PIBO 모터컨트롤러 명령에 맞게 이 한 줄만 고치면 됨.
-const SEND_FORMAT = m => '#m:'+m.join(',')+'!';
-const SEND_INTERVAL = 60;        // ms, 실시간/타임라인 전송 스로틀 (≈16Hz)
-const SERIAL_BAUD_DEFAULT = 9600;
-const SERIAL_AUTO_RECONNECT = true; // 이전에 허가한 포트 있으면 페이지 열 때 자동 재연결
-
-// ── data/ 자동 로드 설정 ──
-const AUTOLOAD   = true;          // 페이지 열면 data/에서 자동 로드
+// ── data/ 자동 로드 ──
+const AUTOLOAD   = true;
 const DATA_DIR   = 'data/';
-const URDF_NAMES = ['pibo.urdf'];
+const URDF_NAMES = ['arm4.urdf'];          // data/ 안의 URDF 파일명
+
+// ── 실물 시리얼 (#m:L1,L2,L3,L4!) ──
+// 채널 = 가동관절(fixed제외)을 URDF 순서대로 매핑.
+//   arm4 기준: [joint1_yaw, joint2_shoulder, joint3_elbow, gripper_joint]
+// 서보각 변환:
+//   - revolute  : 슬라이더=라디안 → 서보 = 90 + (라디안×180/π) (0 rad = 90°)
+//   - prismatic : 슬라이더가 이미 0~180 서보각 → 그대로
+const ARM_INVERT = {};                      // 예: { joint2_shoulder:true } (실물 방향 반대축)
+const ARM_OFFSET = {};                      // 예: { joint1_yaw: 3 } (서보각 보정 +deg)
+const SEND_INTERVAL = 60;                   // ms, 전송 스로틀 (≈16Hz)
+const SERIAL_BAUD_DEFAULT = 9600;
+const SERIAL_AUTO_RECONNECT = true;         // 이전 허가 포트 자동 재연결
 
 // ═══════════════════════════════════════════════════════════
 // ORBIT CONTROLS
@@ -427,7 +387,6 @@ resize();new ResizeObserver(resize).observe(vp);
 let robotRoot=null,jointObjs={},baseQs={},basePs={},jointDefs={};
 let allMeshes=[],allAxes=[],wireMode=false,axisMode=false;
 let selectedMesh=null,selectedOrigColor=null;
-let lcdMesh=null,lcdDraw=null,glassesMesh=null,lcdTextColor='#ffffff';
 let sliderEls={},valEls={};
 
 // TIMELINE STATE
@@ -445,6 +404,7 @@ let tlDragging=false,tlDragKfId=null,tlSeeking=false;
 // ═══════════════════════════════════════════════════════════
 // ★ HARDWARE SERIAL
 // ═══════════════════════════════════════════════════════════
+let ARM_JOINTS=[];
 let serialPort=null, serialWriter=null, serialReader=null, serialConnected=false;
 let liveSend=false, lastSendT=0, pendingSend=null;
 
@@ -456,19 +416,25 @@ function setSerialBadge(){
   else if(liveSend){b.textContent='시리얼: 실시간 (LIVE)';b.className='badge live';}
   else{b.textContent='시리얼: 연결됨';b.className='badge ok';}
 }
-// 슬라이더(度) → M0..M9 정수 모터값
-function getMotors(){
-  return PIBO_MAP.map(m=>{const sl=sliderEls[m.j];return Math.round(m.s*(sl?parseFloat(sl.value)||0:0));});
+function jointToServo(jname){
+  const sl=sliderEls[jname]; if(!sl)return 90;
+  const v=parseFloat(sl.value); const jd=jointDefs[jname];
+  let deg;
+  if(jd&&jd.type==='prismatic'){ deg=v; }                       // 이미 0~180
+  else { deg = 90 + (ARM_INVERT[jname]?-1:1)*v*180/Math.PI; }
+  deg += (ARM_OFFSET[jname]||0);
+  return Math.round(Math.min(180,Math.max(0,deg)));
 }
-function sendMotorsNow(){
-  if(!serialConnected)return;
-  serialWrite(SEND_FORMAT(getMotors()));
+function buildArmPacket(){
+  if(!ARM_JOINTS.length)return null;
+  return '#m:'+ARM_JOINTS.map(jointToServo).join(',')+'!';
 }
+function sendArmNow(){ if(!serialConnected)return; const p=buildArmPacket(); if(p)serialWrite(p); }
 function liveSendTick(){
   if(!liveSend||!serialConnected)return;
   const now=performance.now();
-  if(now-lastSendT>=SEND_INTERVAL){lastSendT=now;sendMotorsNow();}
-  else{clearTimeout(pendingSend);pendingSend=setTimeout(()=>{lastSendT=performance.now();sendMotorsNow();},SEND_INTERVAL);}
+  if(now-lastSendT>=SEND_INTERVAL){lastSendT=now;sendArmNow();}
+  else{clearTimeout(pendingSend);pendingSend=setTimeout(()=>{lastSendT=performance.now();sendArmNow();},SEND_INTERVAL);}
 }
 async function serialWrite(s){
   if(!serialConnected||!serialWriter)return;
@@ -477,10 +443,8 @@ async function serialWrite(s){
 }
 function describePort(p){
   try{const i=p.getInfo();
-    if(i&&i.usbVendorId!=null){
-      const h=n=>('000'+n.toString(16)).slice(-4).toUpperCase();
-      return 'USB VID:'+h(i.usbVendorId)+' PID:'+h(i.usbProductId);
-    }
+    if(i&&i.usbVendorId!=null){const h=n=>('000'+n.toString(16)).slice(-4).toUpperCase();
+      return 'USB VID:'+h(i.usbVendorId)+' PID:'+h(i.usbProductId);}
   }catch(e){}
   return '직렬 포트';
 }
@@ -502,19 +466,12 @@ async function serialOpen(port){
 async function serialConnect(){
   if(serialConnected){await serialDisconnect();return;}
   if(!('serial'in navigator)){alert('이 브라우저는 Web Serial 미지원입니다. 최신 Chrome/Edge를 사용하세요.');return;}
-  try{
-    const port=await navigator.serial.requestPort();   // ← 브라우저 포트 선택창(COM 선택)
-    await serialOpen(port);
-  }catch(e){slog('[connect err] '+e.message+'\n');}
+  try{ const port=await navigator.serial.requestPort(); await serialOpen(port); }   // ← 포트 선택창(COM 선택)
+  catch(e){slog('[connect err] '+e.message+'\n');}
 }
 async function readSerialLoop(){
-  try{
-    while(serialConnected){
-      const {value,done}=await serialReader.read();
-      if(done)break;
-      if(value)slog(value);
-    }
-  }catch(e){slog('[read err] '+e.message+'\n');}
+  try{ while(serialConnected){ const {value,done}=await serialReader.read(); if(done)break; if(value)slog(value);} }
+  catch(e){slog('[read err] '+e.message+'\n');}
 }
 async function serialDisconnect(){
   serialConnected=false;liveSend=false;
@@ -529,16 +486,14 @@ async function serialDisconnect(){
   const b=document.getElementById('serialBtn');b.textContent='🔌 연결 (Connect)';b.style.background='';
   slog('[disconnected]\n');setSerialBadge();
 }
-// 이전에 허가한 포트 자동 재연결
 async function trySerialAutoReconnect(){
   if(!SERIAL_AUTO_RECONNECT||!('serial'in navigator))return;
-  try{
-    const ports=await navigator.serial.getPorts();
-    if(ports.length){ slog('[auto-reconnect] '+describePort(ports[0])+'\n'); await serialOpen(ports[0]); }
-  }catch(e){slog('[auto-reconnect err] '+e.message+'\n');}
+  try{ const ports=await navigator.serial.getPorts();
+    if(ports.length){ slog('[auto-reconnect] '+describePort(ports[0])+'\n'); await serialOpen(ports[0]); } }
+  catch(e){slog('[auto-reconnect err] '+e.message+'\n');}
 }
 if('serial'in navigator){
-  navigator.serial.addEventListener('disconnect',e=>{
+  navigator.serial.addEventListener('disconnect',()=>{
     if(serialConnected){serialConnected=false;document.getElementById('serialStat').textContent='장치 분리됨';
       const b=document.getElementById('serialBtn');b.textContent='🔌 연결 (Connect)';b.style.background='';setSerialBadge();slog('[device unplugged]\n');}
   });
@@ -547,12 +502,12 @@ if('serial'in navigator){
 document.getElementById('serialBtn').addEventListener('click',serialConnect);
 document.getElementById('liveBtn').addEventListener('click',function(){
   liveSend=!liveSend;this.classList.toggle('on',liveSend);setSerialBadge();
-  if(liveSend)sendMotorsNow();
+  if(liveSend)sendArmNow();
 });
-document.getElementById('sendOnceBtn').addEventListener('click',sendMotorsNow);
-document.getElementById('rawSendBtn').addEventListener('click',()=>{
-  const v=document.getElementById('rawCmd').value.trim();if(v)serialWrite(v);
-});
+document.getElementById('sendOnceBtn').addEventListener('click',sendArmNow);
+document.getElementById('hwStopBtn').addEventListener('click',()=>serialWrite('#stop!'));
+document.getElementById('hwPosBtn').addEventListener('click',()=>serialWrite('#pos!'));
+document.getElementById('rawSendBtn').addEventListener('click',()=>{const v=document.getElementById('rawCmd').value.trim();if(v)serialWrite(v);});
 document.getElementById('rawCmd').addEventListener('keydown',e=>{if(e.key==='Enter'){const v=e.target.value.trim();if(v)serialWrite(v);}});
 
 // RENDER LOOP
@@ -569,7 +524,7 @@ function renderLoop(now){
     }
     playLastT=now;
     applyAtTime(currentTime);
-    liveSendTick();             // ★ 재생 중 실물 스트리밍
+    liveSendTick();
   }
   renderer.render(scene,camera);
   drawTimeline();
@@ -578,10 +533,8 @@ function renderLoop(now){
 }
 requestAnimationFrame(renderLoop);
 
-// FILE UPLOAD
+// FILE / AUTOLOAD
 let urdfFile=null,stlFiles=[];
-
-// data/ 에서 URDF+STL 직접 fetch (업로드 없이)
 async function autoLoadFromData(){
   const ov=document.getElementById('loadOv'), title=document.getElementById('loadTitle');
   const ptext=document.getElementById('ptext'), pbar=document.getElementById('pbar'), spin=document.getElementById('spinner');
@@ -590,7 +543,7 @@ async function autoLoadFromData(){
     setTimeout(()=>{ ov.style.display='none'; document.getElementById('emptyMsg').style.display='flex'; }, 4000); };
   document.getElementById('emptyMsg').style.display='none';
   ov.style.display='flex'; spin.style.display='block';
-  title.textContent='data/ 에서 불러오는 중... (Loading from data/)';
+  title.textContent='data/ 에서 불러오는 중...';
   ptext.textContent='URDF 가져오는 중...'; pbar.style.width='0%';
 
   let urdfTxt=null, urdfName=null;
@@ -627,11 +580,12 @@ async function loadRobot(){
   isPlaying=false;
   try{
     if(robotRoot){scene.remove(robotRoot);robotRoot=null;}
-    jointObjs={};baseQs={};basePs={};allMeshes=[];allAxes=[];sliderEls={};valEls={};lcdMesh=null;lcdDraw=null;glassesMesh=null;
+    jointObjs={};baseQs={};basePs={};allMeshes=[];allAxes=[];sliderEls={};valEls={};
 
     const urdfTxt=await readText(urdfFile);
     const{links,joints}=parseURDF(urdfTxt);
     jointDefs=joints;
+    ARM_JOINTS=Object.values(joints).filter(j=>j.type!=='fixed').map(j=>j.name); // ★ #m: 채널
 
     const meshMap={};for(const f of stlFiles)meshMap[f.name.toLowerCase()]=f;
     const childSet=new Set(Object.values(joints).map(j=>j.child));
@@ -655,7 +609,7 @@ async function loadRobot(){
       if(k.includes('left')||k.startsWith('l_')||k.includes('_l_')||k.endsWith('_l'))return 0x4fc3f7;
       if(k.includes('right')||k.startsWith('r_')||k.includes('_r_')||k.endsWith('_r'))return 0xf48fb1;
       if(k.includes('head')||k.includes('servo'))return 0xffb74d;
-      if(k.includes('hand')||k.includes('finger')||k.includes('thumb')||k.includes('index')||k.includes('middle')||k.includes('little')||k.includes('palm'))return 0xce93d8;
+      if(k.includes('hand')||k.includes('finger')||k.includes('palm'))return 0xce93d8;
       if(k.includes('hip')||k.includes('pelvis')||k.includes('waist')||k.includes('torso'))return 0x90a4ae;
       if(k.includes('foot')||k.includes('ankle')||k.includes('knee'))return 0xa5d6a7;
       return 0x78909c;
@@ -667,8 +621,6 @@ async function loadRobot(){
         const col=v.rgba?new THREE.Color(v.rgba[0],v.rgba[1],v.rgba[2]).getHex():getColor(lname);
         const mat=new THREE.MeshPhongMaterial({color:col,specular:0x111122,shininess:28});
         const mesh=new THREE.Mesh(geo,mat);mesh.userData={linkName:lname};
-        if(b.includes('torso_lcd'))lcdMesh=mesh;
-        if(b.includes('head_glasses'))glassesMesh=mesh;
         mesh.position.set(...v.origin.xyz);mesh.setRotationFromEuler(new THREE.Euler(...v.origin.rpy,'XYZ'));mesh.scale.set(...v.sc);
         allMeshes.push(mesh);grp.add(mesh);}
       const ax=new THREE.AxesHelper(.08);ax.visible=false;allAxes.push(ax);grp.add(ax);
@@ -687,17 +639,15 @@ async function loadRobot(){
       const box=new THREE.Box3().setFromObject(robotRoot);
       robotRoot.position.y=-box.min.y;
       orbit.focusBox(new THREE.Box3().setFromObject(robotRoot));
-      setupLCD();
-      if(glassesMesh){glassesMesh.material.color.set('#00e1ff');document.getElementById('glassColor').value='#00e1ff';}
     }
     buildSliders(joints);
-    for(const jn in sliderEls){ setJointValue(jn, 0); }
     const mv=Object.values(joints).filter(j=>j.type!=='fixed').length;
     document.getElementById('infoSec').style.display='block';
     document.getElementById('infoRows').innerHTML=
       [['링크',Object.keys(links).length],['관절',Object.keys(joints).length],['가동',mv],['메시',allMeshes.length]]
       .map(([k,v])=>`<div class="info-row"><span>${k}</span><span class="info-val">${v}</span></div>`).join('');
     const b=document.getElementById('statusBadge');b.textContent='완료';b.className='badge ok';
+    slog('[robot loaded] #m channels = '+ARM_JOINTS.join(', ')+'\n');
   }catch(e){console.error(e);alert('오류 (Error): '+e.message);}
   document.getElementById('loadOv').style.display='none';
   if(_lb)_lb.disabled=false;
@@ -707,49 +657,23 @@ async function loadRobot(){
 function buildSliders(joints){
   const movable=Object.values(joints).filter(j=>j.type!=='fixed');
   document.getElementById('jcount').textContent=movable.length+'개';
-  const groups={'머리':[],'오른팔':[],'왼팔':[],'오른다리':[],'왼다리':[],'기타':[]};
-  for(const j of movable){const lab=(MOTOR_LABEL[j.name]||'');
-    if(lab.includes('Head'))groups['머리'].push(j);
-    else if(lab.includes('Right Arm')||lab.includes('Right Hand'))groups['오른팔'].push(j);
-    else if(lab.includes('Left Arm')||lab.includes('Left Hand'))groups['왼팔'].push(j);
-    else if(lab.includes('Right Leg')||lab.includes('Right Foot'))groups['오른다리'].push(j);
-    else if(lab.includes('Left Leg')||lab.includes('Left Foot'))groups['왼다리'].push(j);
-    else groups['기타'].push(j);
-  }
-  const within=n=>{n=n.toLowerCase();return n.includes('tilt')?0:n.includes('pan')?1:n.includes('shoulder')?0:n.includes('elbow')?1:n.includes('hip')?0:(n.includes('ankle')||n.includes('foot'))?1:2;};
-  for(const k in groups)groups[k].sort((a,b)=>within(a.name)-within(b.name));
   const el=document.getElementById('jointsEl');
   if(!movable.length){el.innerHTML='<div class="no-joint">가동 관절 없음</div>';return;}
-  let html='';
-  for(const[gname,jlist]of Object.entries(groups)){
-    if(!jlist.length)continue;const gid=sid(gname);
-    html+=`<div class="group-header" onclick="toggleG('${gid}')"><span class="garr open" id="arr_${gid}">&#x25B6;</span><span>${gname}</span><span style="color:#B0B7BE;margin-left:4px">(${jlist.length})</span></div><div class="group-body" id="gb_${gid}">`;
-    for(const j of jlist){
-      const isP=j.type==='prismatic';
-      const mn=isP?'0':Math.round(j.limit.lower*180/Math.PI).toString();
-      const mx=isP?'180':Math.round(j.limit.upper*180/Math.PI).toString();
-      const st='1';
-      html+=`<div class="ji" id="ji_${sid(j.name)}" data-joint="${j.name}"><div class="ji-head"><span class="ji-name" title="${j.name}">${MOTOR_LABEL[j.name]||j.name}</span><span class="ji-type">${j.type}</span><input type="number" class="ji-val" id="v_${sid(j.name)}" value="0" min="${mn}" max="${mx}" step="1"></div><input type="range" class="jslider" data-joint="${j.name}" min="${mn}" max="${mx}" step="${st}" value="0" id="s_${sid(j.name)}"></div>`;
-    }
-    html+='</div>';
+  let html='<div class="group-body" id="gb_all">';
+  for(const j of movable){
+    const isP=j.type==='prismatic';
+    const mn=isP?'0':j.limit.lower.toFixed(4);
+    const mx=isP?'180':j.limit.upper.toFixed(4);
+    const st=isP?'1':'0.001';
+    html+=`<div class="ji" id="ji_${sid(j.name)}" data-joint="${j.name}"><div class="ji-head"><span class="ji-name" title="${j.name}">${j.name}</span><span class="ji-type">${j.type}</span><span class="ji-val" id="v_${sid(j.name)}">0.0°</span></div><input type="range" class="jslider" data-joint="${j.name}" min="${mn}" max="${mx}" step="${st}" value="0" id="s_${sid(j.name)}"></div>`;
   }
+  html+='</div>';
   el.innerHTML=html;
   el.querySelectorAll('.jslider').forEach(sl=>{
     const jname=sl.dataset.joint;sliderEls[jname]=sl;valEls[jname]=document.getElementById('v_'+sid(jname));
-    sl.addEventListener('input',()=>{const v=parseFloat(sl.value);setJointValue(jname,v);valEls[jname].value=Math.round(v);liveSendTick();}); // ★ 실시간 전송
-    valEls[jname].addEventListener('change',()=>{
-      let v=parseFloat(valEls[jname].value);if(isNaN(v))v=0;
-      const mn=parseFloat(sl.min),mx=parseFloat(sl.max);v=Math.max(mn,Math.min(mx,Math.round(v)));
-      valEls[jname].value=v;sl.value=v;setJointValue(jname,v);liveSendTick();                                                              // ★ 실시간 전송
-    });
+    sl.addEventListener('input',()=>{const v=parseFloat(sl.value);setJointValue(jname,v);valEls[jname].textContent=fmtVal(jname,v);liveSendTick();});
   });
 }
-window.toggleG=function(gid){
-  const body=document.getElementById('gb_'+gid),arr=document.getElementById('arr_'+gid);
-  const open=arr.classList.contains('open');
-  body.style.maxHeight=open?'0px':body.scrollHeight+'px';arr.classList.toggle('open',!open);
-};
-setTimeout(()=>document.querySelectorAll('.group-body').forEach(b=>b.style.maxHeight=b.scrollHeight+'px'),60);
 
 document.getElementById('searchBox').addEventListener('input',function(){
   const q=this.value.toLowerCase().trim();
@@ -764,8 +688,6 @@ function fmtVal(jname,v){
   }
   return (v*180/Math.PI).toFixed(1)+'°';
 }
-
-// ★ 조인트 적용: revolute 회전에 ZERO_OFFSET 추가 (어깨 0=앞으로 나란히)
 function setJointValue(jname,v){
   const jobj=jointObjs[jname],jdef=jointDefs[jname];if(!jobj||!jdef)return;
   const ax=new THREE.Vector3(...jdef.axis).normalize();
@@ -774,8 +696,7 @@ function setJointValue(jname,v){
     const off=ax.clone().applyQuaternion(baseQs[jname]).multiplyScalar(d);
     jobj.position.copy(basePs[jname]).add(off);
   }else{
-    const a = (VIEWER_SIGN[jname]||1)*(v*Math.PI/180) + (ZERO_OFFSET[jname]||0);
-    jobj.quaternion.copy(baseQs[jname]).multiply(new THREE.Quaternion().setFromAxisAngle(ax,a));
+    jobj.quaternion.copy(baseQs[jname]).multiply(new THREE.Quaternion().setFromAxisAngle(ax,v));
   }
 }
 const setAngle=setJointValue;
@@ -790,9 +711,9 @@ function applyPose(joints){
   for(const[jname,val]of Object.entries(joints)){
     setJointValue(jname,val);
     if(sliderEls[jname])sliderEls[jname].value=val;
-    if(valEls[jname])valEls[jname].value=Math.round(val);
+    if(valEls[jname])valEls[jname].textContent=fmtVal(jname,val);
   }
-  liveSendTick();             // ★ 포즈 적용(타임라인/불러오기) 시 실물 전송
+  liveSendTick();
 }
 function applyAtTime(t){
   if(!keyframes.length)return;
@@ -815,13 +736,8 @@ function addKeyframe(){
   if(!Object.keys(sliderEls).length){alert('로봇을 먼저 로드하세요 (Load robot first)');return;}
   const SNAP=0.05;
   const existing=keyframes.find(k=>Math.abs(k.time-currentTime)<SNAP);
-  if(existing){
-    existing.joints=getCurrentPose();
-    selectedKfId=existing.id;
-  } else {
-    const kf={id:kfIdCounter++,time:Math.round(currentTime/0.5)*0.5,joints:getCurrentPose()};
-    keyframes.push(kf);selectedKfId=kf.id;
-  }
+  if(existing){existing.joints=getCurrentPose();selectedKfId=existing.id;}
+  else{const kf={id:kfIdCounter++,time:parseFloat(currentTime.toFixed(3)),joints:getCurrentPose()};keyframes.push(kf);selectedKfId=kf.id;}
   updateKfCount();
 }
 function deleteSelectedKf(){
@@ -829,9 +745,7 @@ function deleteSelectedKf(){
   keyframes=keyframes.filter(k=>k.id!==selectedKfId);
   selectedKfId=null;updateKfCount();
 }
-function updateKfCount(){
-  document.getElementById('tlKfCount').textContent=`키프레임 ${keyframes.length}`;
-}
+function updateKfCount(){document.getElementById('tlKfCount').textContent=`키프레임 ${keyframes.length}`;}
 
 // TIMELINE CANVAS
 const tlCanvas=document.getElementById('tlCanvas');
@@ -839,7 +753,7 @@ const tlWrap=document.getElementById('tlWrap');
 function resizeTlCanvas(){tlCanvas.width=tlWrap.clientWidth;tlCanvas.height=tlWrap.clientHeight;}
 resizeTlCanvas();new ResizeObserver(resizeTlCanvas).observe(tlWrap);
 function timeToX(t){return Math.round((t/duration)*tlCanvas.width);}
-function xToTime(x){let t=(x/tlCanvas.width)*duration; t=Math.round(t/0.5)*0.5; return Math.max(0,Math.min(duration,t));}
+function xToTime(x){return Math.max(0,Math.min(duration,(x/tlCanvas.width)*duration));}
 function drawTimeline(){
   const canvas=tlCanvas,ctx=canvas.getContext('2d');
   const W=canvas.width,H=canvas.height;
@@ -866,19 +780,15 @@ function drawTimeline(){
   }
   for(const kf of sorted){
     const x=timeToX(kf.time);const sel=kf.id===selectedKfId;const R=sel?9:7;
-    ctx.shadowBlur=0;
     ctx.fillStyle=sel?'#E8590C':'#1C2530';
     ctx.beginPath();ctx.moveTo(x,TRACK_H/2-R);ctx.lineTo(x+R,TRACK_H/2);ctx.lineTo(x,TRACK_H/2+R);ctx.lineTo(x-R,TRACK_H/2);ctx.closePath();ctx.fill();
-    ctx.shadowBlur=0;
     ctx.strokeStyle=sel?'#E8590C66':'#1C253033';ctx.lineWidth=1;
     ctx.beginPath();ctx.moveTo(x,TRACK_Y);ctx.lineTo(x,TRACK_H);ctx.stroke();
     ctx.fillStyle=sel?'#E8590C':'#5A6572';ctx.font='9px IBM Plex Mono,monospace';ctx.fillText(kf.time.toFixed(2),x+4,TRACK_H/2-12);
   }
   const px=timeToX(currentTime);
-  ctx.shadowBlur=0;
   ctx.strokeStyle='#E8590C';ctx.lineWidth=2;
   ctx.beginPath();ctx.moveTo(px,TRACK_Y);ctx.lineTo(px,TRACK_H);ctx.stroke();
-  ctx.shadowBlur=0;
   ctx.fillStyle='#E8590C';
   ctx.beginPath();ctx.moveTo(px-6,TRACK_Y);ctx.lineTo(px+6,TRACK_Y);ctx.lineTo(px,TRACK_Y+10);ctx.closePath();ctx.fill();
 }
@@ -923,59 +833,24 @@ document.getElementById('tlDurInput').addEventListener('change',function(){
 });
 document.getElementById('tlSpeedSel').addEventListener('change',function(){playSpeed=parseFloat(this.value);});
 document.getElementById('tlLoopBtn').addEventListener('click',function(){loopMode=!loopMode;this.classList.toggle('on',loopMode);});
-
-// ★ 모션 저장 → 실물 PIBO 포맷 {name:{init_def,init,pos:[{d,seq}]}} (도 단위)
 document.getElementById('tlSaveMotion').addEventListener('click',()=>{
-  if(!keyframes.length){alert('키프레임을 먼저 추가하세요 (Add a keyframe first)');return;}
-  const sorted=[...keyframes].sort((a,b)=>a.time-b.time);
-  const toD=kf=>PIBO_MAP.map(m=>Math.round(m.s*(kf.joints[m.j]??0)));
-  const hasZero = sorted.length && sorted[0].time<0.01;
-  const init = sorted.length ? toD(sorted[0]) : PIBO_DEFAULT_INIT.slice();
-  const posFrames = hasZero ? sorted.slice(1) : sorted;
-  const pos = posFrames.map(kf=>({ d:toD(kf), seq:Math.round(kf.time*1000) }));
-  const name=(prompt('모션 이름 (Motion name)','motion')||'motion').trim()||'motion';
-  const data={[name]:{init_def:1, init, pos}};
-  const a=document.createElement('a');a.download=name+'.json';
-  a.href=URL.createObjectURL(new Blob([JSON.stringify(data)],{type:'application/json'}));a.click();
+  const data={duration,keyframes};const a=document.createElement('a');a.download='motion.json';
+  a.href=URL.createObjectURL(new Blob([JSON.stringify(data,null,2)],{type:'application/json'}));a.click();
 });
 document.getElementById('tlLoadMotion').addEventListener('click',()=>document.getElementById('motionFileIn').click());
 document.getElementById('motionFileIn').addEventListener('change',async e=>{
   const f=e.target.files[0];if(!f)return;
-  const raw=JSON.parse(await readText(f));
-  let frames=null, initArr=null;
-  if(Array.isArray(raw)){ frames=raw; }
-  else if(raw.keyframes){
-    duration=raw.duration||5;keyframes=raw.keyframes||[];
-    kfIdCounter=keyframes.reduce((m,k)=>Math.max(m,k.id+1),0);
-    document.getElementById('tlDurInput').value=duration;updateKfCount();currentTime=0;applyAtTime(0);e.target.value='';return;
-  } else {
-    const key=Object.keys(raw)[0]; const m=raw[key]||{}; frames=m.pos||m.table||[]; initArr=m.init||null;
-  }
-  if(frames){
-    const last=PIBO_MAP.map((m,i)=> initArr?initArr[i]:0);
-    const kfs=[];
-    if(initArr){ const j={}; PIBO_MAP.forEach((m,i)=>{ j[m.j]=m.s*(initArr[i]||0); }); kfs.push({id:0,time:0,joints:j}); }
-    frames.forEach((fr)=>{
-      const d=(fr.d||[]).map((v,i)=> v===999 ? last[i] : v);
-      d.forEach((v,i)=>last[i]=v);
-      const joints={};
-      PIBO_MAP.forEach((m,i)=>{ joints[m.j]=m.s*(d[i]||0); });
-      kfs.push({id:kfs.length, time:(fr.seq||0)/1000, joints});
-    });
-    keyframes=kfs;
-    duration=Math.max(5,...keyframes.map(k=>k.time));
-    kfIdCounter=keyframes.length;
-    document.getElementById('tlDurInput').value=duration;
-    updateKfCount();currentTime=0;applyAtTime(0);
-  }
-  e.target.value='';
+  const data=JSON.parse(await readText(f));
+  duration=data.duration||5;document.getElementById('tlDurInput').value=duration;
+  keyframes=data.keyframes||[];kfIdCounter=keyframes.reduce((m,k)=>Math.max(m,k.id+1),0);
+  updateKfCount();currentTime=0;applyAtTime(0);e.target.value='';
 });
 
 // OTHER TOOLS
 document.getElementById('gridBtn').addEventListener('click',function(){grid.visible=!grid.visible;this.classList.toggle('on',grid.visible);});
 document.getElementById('wireBtn').addEventListener('click',function(){wireMode=!wireMode;this.classList.toggle('on',wireMode);allMeshes.forEach(m=>m.material.wireframe=wireMode);});
 document.getElementById('axisBtn').addEventListener('click',function(){axisMode=!axisMode;this.classList.toggle('on',axisMode);allAxes.forEach(a=>a.visible=axisMode);});
-document.getElementById('ssBtn').addEventListener('click',()=>{renderer.render(scene,camera);const a=document.createElement('a');a.download='urdf_sim.png';a.href=cv.toDataURL('image/png');a.click();});
+document.getElementById('ssBtn').addEventListener('click',()=>{renderer.render(scene,camera);const a=document.createElement('a');a.download='arm_sim.png';a.href=cv.toDataURL('image/png');a.click();});
 document.getElementById('resetBtn').addEventListener('click',()=>{
   isPlaying=false;document.getElementById('tlPlayPause').textContent='▶';
   document.querySelectorAll('.jslider').forEach(sl=>{sl.value=0;sl.dispatchEvent(new Event('input'));});
@@ -1013,46 +888,12 @@ cv.addEventListener('click',e=>{
   setTimeout(()=>tt.style.display='none',2000);
 });
 
-// LCD 화면 (가슴 torso_lcd 표면에 캔버스 텍스처)
-function setupLCD(){
-  lcdDraw=null;
-  if(!lcdMesh)return;
-  const geo=lcdMesh.geometry; geo.computeBoundingBox();
-  const bb=geo.boundingBox; const minX=bb.min.x,maxX=bb.max.x,minZ=bb.min.z,maxZ=bb.max.z;
-  const rx=(maxX-minX)||1, rz=(maxZ-minZ)||1;
-  const pos=geo.attributes.position; const uv=new Float32Array(pos.count*2);
-  for(let i=0;i<pos.count;i++){
-    uv[i*2]   = (pos.getX(i)-minX)/rx;
-    uv[i*2+1] = (pos.getZ(i)-minZ)/rz;
-  }
-  geo.setAttribute('uv', new THREE.BufferAttribute(uv,2));
-  const cvs=document.createElement('canvas'); cvs.width=512; cvs.height=Math.max(64,Math.round(512*rz/rx));
-  const ctx=cvs.getContext('2d');
-  const tex=new THREE.CanvasTexture(cvs); tex.anisotropy=4;
-  lcdDraw=function(txt){
-    ctx.fillStyle='#000'; ctx.fillRect(0,0,cvs.width,cvs.height);
-    ctx.fillStyle=lcdTextColor; ctx.textAlign='center'; ctx.textBaseline='middle';
-    const t=txt||''; let fs=cvs.height*0.6; ctx.font='bold '+fs+'px sans-serif';
-    while(t && ctx.measureText(t).width>cvs.width*0.9 && fs>14){ fs-=3; ctx.font='bold '+fs+'px sans-serif'; }
-    ctx.fillText(t, cvs.width/2, cvs.height/2);
-    tex.needsUpdate=true;
-  };
-  lcdMesh.material.color.set(0x000000);
-  lcdMesh.material.emissive=new THREE.Color(0xffffff);
-  lcdMesh.material.emissiveMap=tex;
-  lcdMesh.material.needsUpdate=true;
-  lcdDraw(document.getElementById('lcdText').value||'');
-}
-document.getElementById('lcdText').addEventListener('input',function(){ if(lcdDraw) lcdDraw(this.value); });
-document.getElementById('glassColor').addEventListener('input',function(){ if(glassesMesh) glassesMesh.material.color.set(this.value); });
-document.getElementById('lcdColor').addEventListener('input',function(){ lcdTextColor=this.value; if(lcdDraw) lcdDraw(document.getElementById('lcdText').value); });
-
 // UTILS
 function readText(f){return new Promise((r,j)=>{const fr=new FileReader();fr.onload=e=>r(e.target.result);fr.onerror=j;fr.readAsText(f);});}
 function readBuf(f){return new Promise((r,j)=>{const fr=new FileReader();fr.onload=e=>r(e.target.result);fr.onerror=j;fr.readAsArrayBuffer(f);});}
 function sleep(ms){return new Promise(r=>setTimeout(r,ms));}
 
-// 페이지 열리면 data/에서 자동 로드 + 이전 허가 포트 자동 재연결
+// 페이지 열리면 data/ 자동 로드 + 이전 허가 포트 자동 재연결
 if(AUTOLOAD) window.addEventListener('load',autoLoadFromData);
 window.addEventListener('load',trySerialAutoReconnect);
 </script>
