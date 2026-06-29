@@ -86,31 +86,31 @@
     </collision>
   </link>
 
-  <!-- J1: 베이스 요 (바닥에서 45mm) -->
+  <!-- J1: 베이스 요 (바닥에서 43mm) -->
   <joint name="joint1_yaw" type="revolute">
     <parent link="base_link"/><child link="shoulder"/>
-    <origin xyz="0 0 0.045"/><axis xyz="0 0 1"/>
+    <origin xyz="0 0 0.043"/><axis xyz="0 0 1"/>
     <limit lower="-1.5708" upper="1.5708" effort="2" velocity="2"/>
   </joint>
 
-  <!-- J2: 어깨 피치 (요축에서 45mm), 축 X -->
+  <!-- J2: 어깨 피치 (요축에서 44mm → 어깨높이 87mm), 축 X -->
   <joint name="joint2_shoulder" type="revolute">
     <parent link="shoulder"/><child link="link1"/>
-    <origin xyz="0 0 0.045"/><axis xyz="1 0 0"/>
+    <origin xyz="0 0 0.044"/><axis xyz="1 0 0"/>
     <limit lower="-1.5708" upper="1.5708" effort="2" velocity="2"/>
   </joint>
 
-  <!-- J3: 팔꿈치 피치 (115mm) -->
+  <!-- J3: 팔꿈치 피치 (L1=110mm, 축2→축3) -->
   <joint name="joint3_elbow" type="revolute">
     <parent link="link1"/><child link="link2"/>
-    <origin xyz="0 0 0.115"/><axis xyz="1 0 0"/>
+    <origin xyz="0 0 0.110"/><axis xyz="1 0 0"/>
     <limit lower="-2.0944" upper="2.0944" effort="2" velocity="2"/>
   </joint>
 
-  <!-- 그리퍼 마운트 (105mm, 고정) -->
+  <!-- 그리퍼 마운트 (L2=133mm, 축3→그리퍼 TCP, 고정) -->
   <joint name="joint4_mount" type="fixed">
     <parent link="link2"/><child link="gripper_base"/>
-    <origin xyz="0 0 0.105"/>
+    <origin xyz="0 0 0.133"/>
   </joint>
 
   <!-- J4: 랙앤피니언 prismatic. 0도=45mm 개방, 180도=15mm (스트로크 30mm) -->
