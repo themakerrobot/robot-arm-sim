@@ -1,122 +1,86 @@
 <?xml version="1.0"?>
+<!-- arm4 (world-coordinate STL). 모든 관절 0 = CAD 조립 자세.
+     STL은 조립 위치(mm) 그대로, scale 0.001로 m 변환.
+     joint origin = 자식축-부모축, visual origin = -누적축(월드 상쇄).
+     회전축: 요(X4.23,Y-9.62) / 어깨피치(Y-11.21,Z64.46) / 팔꿈치피치(Y-5.31,Z173.40) [mm] -->
 <robot name="arm4">
   <material name="base_grey"><color rgba="0.45 0.48 0.52 1"/></material>
   <material name="blue"><color rgba="0.18 0.50 0.92 1"/></material>
   <material name="orange"><color rgba="1.00 0.58 0.10 1"/></material>
   <material name="green"><color rgba="0.16 0.75 0.45 1"/></material>
-  <material name="yellow"><color rgba="0.98 0.83 0.18 1"/></material>
   <material name="red"><color rgba="0.92 0.26 0.21 1"/></material>
 
   <link name="base_link">
-    <inertial>
-      <mass value="0.05"/>
-      <inertia ixx="1e-4" iyy="1e-4" izz="1e-4" ixy="0" ixz="0" iyz="0"/>
-    </inertial>
+    <inertial><mass value="0.1"/><inertia ixx="1e-4" iyy="1e-4" izz="1e-4" ixy="0" ixz="0" iyz="0"/></inertial>
     <visual>
-      <geometry><mesh filename="base_link.stl"/></geometry>
+      <origin xyz="0 0 0"/>
+      <geometry><mesh filename="base_link.stl" scale="0.001 0.001 0.001"/></geometry>
       <material name="base_grey"/>
     </visual>
-    <collision>
-      <geometry><mesh filename="base_link.stl"/></geometry>
-    </collision>
   </link>
+
   <link name="shoulder">
-    <inertial>
-      <mass value="0.05"/>
-      <inertia ixx="1e-4" iyy="1e-4" izz="1e-4" ixy="0" ixz="0" iyz="0"/>
-    </inertial>
+    <inertial><mass value="0.05"/><inertia ixx="1e-4" iyy="1e-4" izz="1e-4" ixy="0" ixz="0" iyz="0"/></inertial>
     <visual>
-      <geometry><mesh filename="shoulder.stl"/></geometry>
+      <origin xyz="-0.00423 0.00962 0"/>
+      <geometry><mesh filename="shoulder.stl" scale="0.001 0.001 0.001"/></geometry>
       <material name="blue"/>
     </visual>
-    <collision>
-      <geometry><mesh filename="shoulder.stl"/></geometry>
-    </collision>
   </link>
+
   <link name="link1">
-    <inertial>
-      <mass value="0.05"/>
-      <inertia ixx="1e-4" iyy="1e-4" izz="1e-4" ixy="0" ixz="0" iyz="0"/>
-    </inertial>
+    <inertial><mass value="0.05"/><inertia ixx="1e-4" iyy="1e-4" izz="1e-4" ixy="0" ixz="0" iyz="0"/></inertial>
     <visual>
-      <geometry><mesh filename="link1.stl"/></geometry>
+      <origin xyz="-0.00423 0.01121 -0.06446"/>
+      <geometry><mesh filename="link1.stl" scale="0.001 0.001 0.001"/></geometry>
       <material name="orange"/>
     </visual>
-    <collision>
-      <geometry><mesh filename="link1.stl"/></geometry>
-    </collision>
   </link>
+
   <link name="link2">
-    <inertial>
-      <mass value="0.05"/>
-      <inertia ixx="1e-4" iyy="1e-4" izz="1e-4" ixy="0" ixz="0" iyz="0"/>
-    </inertial>
+    <inertial><mass value="0.05"/><inertia ixx="1e-4" iyy="1e-4" izz="1e-4" ixy="0" ixz="0" iyz="0"/></inertial>
     <visual>
-      <geometry><mesh filename="link2.stl"/></geometry>
+      <origin xyz="-0.00423 0.00531 -0.17340"/>
+      <geometry><mesh filename="link2.stl" scale="0.001 0.001 0.001"/></geometry>
       <material name="green"/>
     </visual>
-    <collision>
-      <geometry><mesh filename="link2.stl"/></geometry>
-    </collision>
   </link>
-  <link name="gripper_base">
-    <inertial>
-      <mass value="0.05"/>
-      <inertia ixx="1e-4" iyy="1e-4" izz="1e-4" ixy="0" ixz="0" iyz="0"/>
-    </inertial>
-    <visual>
-      <geometry><mesh filename="gripper_base.stl"/></geometry>
-      <material name="yellow"/>
-    </visual>
-    <collision>
-      <geometry><mesh filename="gripper_base.stl"/></geometry>
-    </collision>
-  </link>
+
   <link name="moving_jaw">
-    <inertial>
-      <mass value="0.05"/>
-      <inertia ixx="1e-4" iyy="1e-4" izz="1e-4" ixy="0" ixz="0" iyz="0"/>
-    </inertial>
+    <inertial><mass value="0.02"/><inertia ixx="1e-5" iyy="1e-5" izz="1e-5" ixy="0" ixz="0" iyz="0"/></inertial>
     <visual>
-      <geometry><mesh filename="moving_jaw.stl"/></geometry>
+      <origin xyz="-0.00423 0.00531 -0.17340"/>
+      <geometry><mesh filename="moving_jaw.stl" scale="0.001 0.001 0.001"/></geometry>
       <material name="red"/>
     </visual>
-    <collision>
-      <geometry><mesh filename="moving_jaw.stl"/></geometry>
-    </collision>
   </link>
 
-  <!-- J1: 베이스 요 (바닥에서 43mm) -->
+  <!-- J1: 베이스 요 (수직 Z, X4.23 Y-9.62 통과) -->
   <joint name="joint1_yaw" type="revolute">
     <parent link="base_link"/><child link="shoulder"/>
-    <origin xyz="0 0 0.043"/><axis xyz="0 0 1"/>
+    <origin xyz="0.00423 -0.00962 0"/><axis xyz="0 0 1"/>
     <limit lower="-1.5708" upper="1.5708" effort="2" velocity="2"/>
   </joint>
 
-  <!-- J2: 어깨 피치 (요축에서 44mm → 어깨높이 87mm), 축 X -->
+  <!-- J2: 어깨 피치 (X축, Y-11.21 Z64.46) -->
   <joint name="joint2_shoulder" type="revolute">
     <parent link="shoulder"/><child link="link1"/>
-    <origin xyz="0 0 0.044"/><axis xyz="1 0 0"/>
+    <origin xyz="0 -0.00159 0.06446"/><axis xyz="1 0 0"/>
     <limit lower="-1.5708" upper="1.5708" effort="2" velocity="2"/>
   </joint>
 
-  <!-- J3: 팔꿈치 피치 (L1=110mm, 축2→축3) -->
+  <!-- J3: 팔꿈치 피치 (X축, Y-5.31 Z173.40) -->
   <joint name="joint3_elbow" type="revolute">
     <parent link="link1"/><child link="link2"/>
-    <origin xyz="0 0 0.110"/><axis xyz="1 0 0"/>
+    <origin xyz="0 0.00590 0.10894"/><axis xyz="1 0 0"/>
     <limit lower="-2.0944" upper="2.0944" effort="2" velocity="2"/>
   </joint>
 
-  <!-- 그리퍼 마운트 (link2 길이 100mm 끝에 부착, 고정). 그리퍼가 33mm 더 뻗어 TCP=133mm -->
-  <joint name="joint4_mount" type="fixed">
-    <parent link="link2"/><child link="gripper_base"/>
-    <origin xyz="0 0 0.100"/>
-  </joint>
-
-  <!-- J4: 랙앤피니언 prismatic. 0도=45mm 개방, 180도=15mm (스트로크 30mm) -->
+  <!-- J4: 그리퍼 랙앤피니언 prismatic. 우측 죠가 X로 직선이동(스트로크 30mm).
+          방향 반대면 axis를 "1 0 0"으로 바꿀 것 -->
   <joint name="gripper_joint" type="prismatic">
-    <parent link="gripper_base"/><child link="moving_jaw"/>
-    <origin xyz="-0.047 0 0.010"/><axis xyz="1 0 0"/>
+    <parent link="link2"/><child link="moving_jaw"/>
+    <origin xyz="0 0 0"/><axis xyz="-1 0 0"/>
     <limit lower="0" upper="0.030" effort="5" velocity="0.1"/>
   </joint>
 </robot>
