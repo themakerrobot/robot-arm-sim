@@ -239,7 +239,7 @@ input[type=range]:hover::-webkit-slider-thumb,input[type=range]:focus::-webkit-s
     <div class="tl-sep"></div>
     <button class="tl-btn" id="tlSaveMotion">&#x1F4BE; 저장</button>
     <button class="tl-btn" id="tlLoadMotion">&#x1F4C2; 불러오기</button>
-    <input type="file" id="motionFileIn" accept=".json">
+    <input type="file" id="motionFileIn" accept=".txt,.json">
     <span class="tl-kf-count" id="tlKfCount">키프레임 0</span>
   </div>
   <div class="tl-body">
@@ -435,12 +435,8 @@ function setSerialBadge(){
 }
 function jointToServo(jname){
   const sl=sliderEls[jname]; if(!sl)return 90;
-  const v=parseFloat(sl.value); const jd=jointDefs[jname];
-  let deg;
-  if(jd&&jd.type==='prismatic'){ deg=v; }                       // 이미 0~180
-  else { deg = 90 + (ARM_INVERT[jname]?-1:1)*v; }               // v=度
-  deg += (calOffset[jname]||0);
-  return Math.round(Math.min(180,Math.max(0,deg)));
+  const v=parseFloat(sl.value);                                  // 슬라이더가 곧 서보각 0~180
+  return Math.round(Math.min(180,Math.max(0, v+(calOffset[jname]||0))));
 }
 function buildArmPacket(){
   if(!ARM_JOINTS.length)return null;
@@ -691,10 +687,9 @@ function buildSliders(joints){
   let html='<div class="group-body" id="gb_all">';
   for(const j of movable){
     const isP=j.type==='prismatic';
-    const mn=isP?'0':Math.round(j.limit.lower*180/Math.PI).toString();
-    const mx=isP?'180':Math.round(j.limit.upper*180/Math.PI).toString();
-    const st='1';   // 1도 단위(정수)
-    html+=`<div class="ji" id="ji_${sid(j.name)}" data-joint="${j.name}"><div class="ji-head"><span class="ji-name" title="${j.name}">${j.name}</span><div class="ji-nudge-grp"><button class="ji-nudge" data-joint="${j.name}" data-dir="-1">−</button><span class="ji-val" id="v_${sid(j.name)}">0.0°</span><button class="ji-nudge" data-joint="${j.name}" data-dir="1">+</button></div></div><input type="range" class="jslider" data-joint="${j.name}" min="${mn}" max="${mx}" step="${st}" value="0" id="s_${sid(j.name)}"></div>`;
+    const mn='0', mx='180', st='1';          // 서보각 0~180, 1도 단위
+    const dv=isP?0:90;                        // revolute 중립=90, 그리퍼=0
+    html+=`<div class="ji" id="ji_${sid(j.name)}" data-joint="${j.name}"><div class="ji-head"><span class="ji-name" title="${j.name}">${j.name}</span><div class="ji-nudge-grp"><button class="ji-nudge" data-joint="${j.name}" data-dir="-1">−</button><span class="ji-val" id="v_${sid(j.name)}">0°</span><button class="ji-nudge" data-joint="${j.name}" data-dir="1">+</button></div></div><input type="range" class="jslider" data-joint="${j.name}" min="${mn}" max="${mx}" step="${st}" value="${dv}" id="s_${sid(j.name)}"></div>`;
   }
   html+='</div>';
   el.innerHTML=html;
@@ -712,6 +707,8 @@ function buildSliders(joints){
     btn.addEventListener('mouseup',stop);btn.addEventListener('mouseleave',stop);
     btn.addEventListener('touchstart',start,{passive:false});btn.addEventListener('touchend',stop);
   });
+  // 초기 슬라이더값(중립 90 등) 모델·라벨에 반영
+  for(const jn in sliderEls){ setJointValue(jn, parseFloat(sliderEls[jn].value)); updateValLabel(jn); }
 }
 
 document.getElementById('searchBox').addEventListener('input',function(){
@@ -735,7 +732,8 @@ function setJointValue(jname,v){
     const off=ax.clone().applyQuaternion(baseQs[jname]).multiplyScalar(d);
     jobj.position.copy(basePs[jname]).add(off);
   }else{
-    jobj.quaternion.copy(baseQs[jname]).multiply(new THREE.Quaternion().setFromAxisAngle(ax,v*Math.PI/180)); // v=度
+    const rot=(ARM_INVERT[jname]?-1:1)*(v-90);                  // 서보각 0~180 → 모델 -90~+90도
+    jobj.quaternion.copy(baseQs[jname]).multiply(new THREE.Quaternion().setFromAxisAngle(ax,rot*Math.PI/180));
   }
 }
 const setAngle=setJointValue;
@@ -903,15 +901,43 @@ document.getElementById('tlDurInput').addEventListener('change',function(){
 document.getElementById('tlSpeedSel').addEventListener('change',function(){playSpeed=parseFloat(this.value);});
 document.getElementById('tlLoopBtn').addEventListener('click',function(){loopMode=!loopMode;this.classList.toggle('on',loopMode);});
 document.getElementById('tlSaveMotion').addEventListener('click',()=>{
-  const data={duration,keyframes};const a=document.createElement('a');a.download='motion.json';
-  a.href=URL.createObjectURL(new Blob([JSON.stringify(data,null,2)],{type:'application/json'}));a.click();
+  if(!keyframes.length){alert('키프레임을 먼저 추가하세요 (Add a keyframe first)');return;}
+  // 키프레임 joints(서보각) → 보정 포함 모터값
+  const toServos=j=>ARM_JOINTS.map(jn=>Math.round(Math.min(180,Math.max(0,(j[jn]??90)+(calOffset[jn]||0)))));
+  const fmtDt=d=>Number.isInteger(d)?String(d):d.toFixed(2).replace(/0+$/,'').replace(/\.$/,'');
+  const sorted=[...keyframes].sort((a,b)=>a.time-b.time);
+  const lines=[];
+  for(let i=0;i<sorted.length;i++){
+    lines.push('m:'+toServos(sorted[i].joints).join(','));
+    if(i<sorted.length-1){const dt=sorted[i+1].time-sorted[i].time; if(dt>0)lines.push('sleep '+fmtDt(dt));}
+  }
+  const a=document.createElement('a');a.download='motion.txt';
+  a.href=URL.createObjectURL(new Blob([lines.join('\n')+'\n'],{type:'text/plain'}));a.click();
 });
 document.getElementById('tlLoadMotion').addEventListener('click',()=>document.getElementById('motionFileIn').click());
 document.getElementById('motionFileIn').addEventListener('change',async e=>{
   const f=e.target.files[0];if(!f)return;
-  const data=JSON.parse(await readText(f));
-  duration=data.duration||5;document.getElementById('tlDurInput').value=duration;
-  keyframes=data.keyframes||[];kfIdCounter=keyframes.reduce((m,k)=>Math.max(m,k.id+1),0);
+  const raw=(await readText(f)).trim();
+  if(raw[0]==='{'){   // 기존 JSON 포맷
+    const data=JSON.parse(raw);
+    duration=data.duration||5;document.getElementById('tlDurInput').value=duration;
+    keyframes=data.keyframes||[];kfIdCounter=keyframes.reduce((m,k)=>Math.max(m,k.id+1),0);
+  }else{              // 텍스트 포맷: m:.. / sleep 초
+    const kfs=[];let t=0;
+    for(const ln of raw.split('\n')){
+      const s=ln.trim();if(!s)continue;
+      if(/^#?m:/.test(s)){
+        const nums=s.replace(/^#?m:/,'').replace(/!$/,'').split(',').map(x=>parseInt(x.trim()));
+        const joints={};ARM_JOINTS.forEach((jn,i)=>{joints[jn]=isNaN(nums[i])?90:nums[i];});
+        kfs.push({id:kfs.length,time:t,joints});
+      }else if(/^sleep/i.test(s)){
+        t+=parseFloat(s.replace(/sleep/i,'').trim())||0;
+      }
+    }
+    keyframes=kfs;kfIdCounter=kfs.length;
+    duration=Math.max(5,...keyframes.map(k=>k.time));
+    document.getElementById('tlDurInput').value=duration;
+  }
   updateKfCount();currentTime=0;applyAtTime(0);e.target.value='';
 });
 
@@ -922,7 +948,11 @@ document.getElementById('axisBtn').addEventListener('click',function(){axisMode=
 document.getElementById('ssBtn').addEventListener('click',()=>{renderer.render(scene,camera);const a=document.createElement('a');a.download='arm_sim.png';a.href=cv.toDataURL('image/png');a.click();});
 document.getElementById('resetBtn').addEventListener('click',()=>{
   isPlaying=false;document.getElementById('tlPlayPause').textContent='▶';
-  document.querySelectorAll('.jslider').forEach(sl=>{sl.value=0;sl.dispatchEvent(new Event('input'));});
+  document.querySelectorAll('.jslider').forEach(sl=>{
+    const jd=jointDefs[sl.dataset.joint];
+    sl.value=(jd&&jd.type==='prismatic')?0:90;     // 중립
+    sl.dispatchEvent(new Event('input'));
+  });
 });
 document.getElementById('savePoseBtn').addEventListener('click',()=>{
   const pose={};document.querySelectorAll('.jslider').forEach(sl=>{pose[sl.dataset.joint]=parseFloat(sl.value);});
