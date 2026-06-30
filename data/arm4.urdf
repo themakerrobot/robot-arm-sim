@@ -2,7 +2,7 @@
 <!-- arm4 (world-coordinate STL). 모든 관절 0 = CAD 조립 자세.
      STL은 조립 위치(mm) 그대로, scale 0.001로 m 변환.
      joint origin = 자식축-부모축, visual origin = -누적축(월드 상쇄).
-     회전축: 요(X4.23,Y-9.62) / 어깨피치(Y-11.21,Z64.46) / 팔꿈치피치(Y-5.31,Z173.40) [mm] -->
+     회전축: 요(X4.23,Y-9.62) / 어깨피치(Y-11.21,Z74.46) / 팔꿈치피치(Y-5.31,Z183.40) [기둥 35mm] [mm] -->
 <robot name="arm4">
   <material name="base_grey"><color rgba="0.45 0.48 0.52 1"/></material>
   <material name="blue"><color rgba="0.18 0.50 0.92 1"/></material>
@@ -31,7 +31,7 @@
   <link name="link1">
     <inertial><mass value="0.05"/><inertia ixx="1e-4" iyy="1e-4" izz="1e-4" ixy="0" ixz="0" iyz="0"/></inertial>
     <visual>
-      <origin xyz="-0.00423 0.01121 -0.06446"/>
+      <origin xyz="-0.00423 0.01121 -0.07446"/>
       <geometry><mesh filename="link1.stl" scale="0.001 0.001 0.001"/></geometry>
       <material name="orange"/>
     </visual>
@@ -40,7 +40,7 @@
   <link name="link2">
     <inertial><mass value="0.05"/><inertia ixx="1e-4" iyy="1e-4" izz="1e-4" ixy="0" ixz="0" iyz="0"/></inertial>
     <visual>
-      <origin xyz="-0.00423 0.00531 -0.17340"/>
+      <origin xyz="-0.00423 0.00531 -0.18340"/>
       <geometry><mesh filename="link2.stl" scale="0.001 0.001 0.001"/></geometry>
       <material name="green"/>
     </visual>
@@ -49,7 +49,7 @@
   <link name="moving_jaw">
     <inertial><mass value="0.02"/><inertia ixx="1e-5" iyy="1e-5" izz="1e-5" ixy="0" ixz="0" iyz="0"/></inertial>
     <visual>
-      <origin xyz="-0.00423 0.00531 -0.17340"/>
+      <origin xyz="-0.00423 0.00531 -0.18340"/>
       <geometry><mesh filename="moving_jaw.stl" scale="0.001 0.001 0.001"/></geometry>
       <material name="red"/>
     </visual>
@@ -65,7 +65,7 @@
   <!-- J2: 어깨 피치 (X축, Y-11.21 Z64.46) -->
   <joint name="joint2_shoulder" type="revolute">
     <parent link="shoulder"/><child link="link1"/>
-    <origin xyz="0 -0.00159 0.06446"/><axis xyz="0 -1 0"/>
+    <origin xyz="0 -0.00159 0.07446"/><axis xyz="0 -1 0"/>
     <limit lower="-1.5708" upper="1.5708" effort="2" velocity="2"/>
   </joint>
 
