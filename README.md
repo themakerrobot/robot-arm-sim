@@ -4,6 +4,8 @@
 
 **실행 주소:** https://themakerrobot.github.io/robot-arm-sim/
 
+![로봇팔 시뮬레이터 화면](docs/overview.png)
+
 브라우저는 **Chrome 또는 Edge** 를 쓰세요 (실물 연결 기능 Web Serial이 이 두 곳에서만 동작합니다). 페이지를 열면 `data/` 폴더의 모델(arm4.urdf + STL)이 자동으로 불러와집니다.
 
 ---
