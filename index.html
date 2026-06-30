@@ -741,11 +741,12 @@ const setAngle=setJointValue;
 // 값 라벨: 일반=각도, 보정모드=오프셋(+x.x°)
 function updateValLabel(jname){
   const el=valEls[jname],sl=sliderEls[jname]; if(!el||!sl)return;
+  const base=fmtVal(jname,parseFloat(sl.value));
   const jd=jointDefs[jname];
-  if(calibMode){
-    if(jd&&jd.type==='prismatic'){el.textContent='—';}
-    else{const o=calOffset[jname]||0;el.textContent=(o>=0?'+':'')+o.toFixed(1)+'°';}
-  }else{el.textContent=fmtVal(jname,parseFloat(sl.value));}
+  if(calibMode && !(jd&&jd.type==='prismatic')){
+    const o=calOffset[jname]||0;
+    el.innerHTML=base+' <span style="color:var(--ink3);font-size:9px">('+(o>=0?'+':'')+o+')</span>';
+  }else{el.textContent=base;}
 }
 function refreshAllLabels(){for(const jn in sliderEls)updateValLabel(jn);}
 
