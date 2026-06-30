@@ -266,7 +266,7 @@ const URDF_NAMES = ['arm4.urdf'];          // data/ 안의 URDF 파일명
 //   - prismatic : 슬라이더가 이미 0~180 서보각 → 그대로
 const ARM_INVERT = {};                      // 예: { joint2_shoulder:true } (실물 방향 반대축)
 const ARM_OFFSET = {};                      // 예: { joint1_yaw: 3 } (서보각 보정 +deg)
-const SEND_INTERVAL = 60;                   // ms, 전송 스로틀 (≈16Hz)
+const SEND_INTERVAL = 500;                  // ms, 전송 간격(2Hz). 값 바뀔 때만 전송
 const SERIAL_BAUD_DEFAULT = 9600;
 const SERIAL_AUTO_RECONNECT = true;         // 이전 허가 포트 자동 재연결
 
@@ -442,7 +442,13 @@ function buildArmPacket(){
   if(!ARM_JOINTS.length)return null;
   return '#m:'+ARM_JOINTS.map(jointToServo).join(',')+'!';
 }
-function sendArmNow(){ if(!serialConnected)return; const p=buildArmPacket(); if(p)serialWrite(p); }
+let lastSentPacket="";
+function sendArmNow(force){
+  if(!serialConnected)return;
+  const p=buildArmPacket(); if(!p)return;
+  if(!force && p===lastSentPacket) return;   // 같은 값이면 건너뜀
+  lastSentPacket=p; serialWrite(p);
+}
 function liveSendTick(){
   if(!liveSend||!serialConnected)return;
   const now=performance.now();
@@ -515,19 +521,19 @@ if('serial'in navigator){
 document.getElementById('serialBtn').addEventListener('click',serialConnect);
 document.getElementById('liveBtn').addEventListener('click',function(){
   liveSend=!liveSend;this.classList.toggle('on',liveSend);setSerialBadge();
-  if(liveSend)sendArmNow();
+  if(liveSend)sendArmNow(true);
 });
-document.getElementById('sendOnceBtn').addEventListener('click',sendArmNow);
+document.getElementById('sendOnceBtn').addEventListener('click',()=>sendArmNow(true));
 document.getElementById('calibBtn').addEventListener('click',function(){
   calibMode=!calibMode;this.classList.toggle('on',calibMode);
   document.body.classList.toggle('calib-mode',calibMode);
   document.getElementById('calibRow').style.display=calibMode?'flex':'none';
   refreshAllLabels();
-  if(calibMode&&serialConnected)sendArmNow();
+  if(calibMode&&serialConnected)sendArmNow(true);
 });
 document.getElementById('calibResetBtn').addEventListener('click',()=>{
   calOffset=Object.assign({},ARM_OFFSET);saveCal();refreshAllLabels();
-  if(serialConnected)sendArmNow();
+  if(serialConnected)sendArmNow(true);
 });
 document.getElementById('hwStopBtn').addEventListener('click',()=>serialWrite('#stop!'));
 document.getElementById('hwPosBtn').addEventListener('click',()=>serialWrite('#pos!'));
@@ -759,7 +765,7 @@ function nudge(jname,dir){
   if(calibMode && !(jd&&jd.type==='prismatic')){       // 보정: 오프셋 조정
     calOffset[jname]=(calOffset[jname]||0)+dir*CAL_STEP_DEG;
     saveCal();updateValLabel(jname);
-    if(serialConnected)sendArmNow();                   // 실물 즉시 반영
+    if(serialConnected)sendArmNow(true);                   // 실물 즉시 반영
     return;
   }
   let v=parseFloat(sl.value)+dir*1;                     // 1° / 1단위
