@@ -566,11 +566,14 @@ document.getElementById('hwPosBtn').addEventListener('click',()=>serialWrite('#p
 document.getElementById('rawSendBtn').addEventListener('click',()=>{const v=document.getElementById('rawCmd').value.trim();if(v)serialWrite(v);});
 document.getElementById('rawCmd').addEventListener('keydown',e=>{if(e.key==='Enter'){const v=e.target.value.trim();if(v)serialWrite(v);}});
 
-// ── IK: (X,Y,Z mm) → 서보각. 홈(서보90,90,90)=수직직립 기준 ──
+// ── IK: X=앞뒤(요 고정), Y=좌우(요 회전). 홈(서보90,90,90)=수직직립 ──
 function solveIK(X,Y,Z){
   const {L1,L2,H0,DIR1,DIR2,DIR3,YAW0}=IK;
-  const th1=Math.atan2(Y,X);                 // 요(앞=+X)
-  const a=Math.hypot(X,Y), b=Z-H0;           // 어깨 기준 평면좌표
+  // 요: 정면(+X) 기준 좌우(Y)로만 회전. X부호로 180° 튀지 않게 X는 항상 +쪽으로 보고 부호는 평면반경에 반영.
+  const fwd=Math.hypot(X,Y);                  // 수평 거리(항상 +)
+  const sgn=(X<0)?-1:1;                        // X 음수 = 뒤로
+  const th1=Math.atan2(Y, Math.abs(X));       // X절댓값 기준 → ±90° 안에서만 회전
+  const a=sgn*fwd, b=Z-H0;                     // 평면 전후(부호) / 상하
   let reach=true;
   let cb=(a*a+b*b-L1*L1-L2*L2)/(2*L1*L2);
   if(cb>1){cb=1;reach=false;} if(cb<-1){cb=-1;reach=false;}
