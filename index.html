@@ -720,7 +720,8 @@ function fmtVal(jname,v){
   const jd=jointDefs[jname];
   if(jd&&jd.type==='prismatic'){
     const d=jd.limit.lower+(v/180)*(jd.limit.upper-jd.limit.lower);
-    return v.toFixed(0)+'° ('+(d*1000).toFixed(1)+'mm)';
+    const gap=15+(jd.limit.upper-d)*1000;   // 닫힘(upper)=15mm 기준 죠 간격
+    return v.toFixed(0)+'° (간격 '+gap.toFixed(0)+'mm)';
   }
   return v.toFixed(0)+'°';
 }
